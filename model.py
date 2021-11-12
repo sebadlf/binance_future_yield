@@ -80,6 +80,31 @@ class FuturePrice(Base):
     inserted = Column(DATETIME(fsp=6), default=datetime.utcnow)
     updated = Column(DATETIME(fsp=6), default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class FutureHistorical(Base):
+    __tablename__ = 'future_historical'
+
+    # id = Column(Integer, primary_key=True)
+    symbol = Column(String(20), ForeignKey('future.symbol'), primary_key=True)
+    open_time = Column(DATETIME, primary_key=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    volume = Column(Float)
+    close_time = Column(DATETIME)
+    quote_asset_volume = Column(Float)
+    trades = Column(Integer)
+    taker_buy_base = Column(Float)
+    taker_buy_quote = Column(Float)
+    ignore = Column(Float)
+
+    inserted = Column(DATETIME(fsp=6), default=datetime.utcnow)
+    updated = Column(DATETIME(fsp=6), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index('symbol', symbol, open_time),
+    )
+
 engine = create_engine(keys.DB_CONNECTION)
 
 view_tables = ['current_operations_to_open', 'current_operations_to_close']

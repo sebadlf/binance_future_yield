@@ -1,7 +1,53 @@
 from sqlalchemy.orm import Session, aliased
 from datetime import datetime, timezone
+from sqlalchemy import func, delete
 
 import model
+
+def get_current_future_symbols(engine):
+    with Session(engine) as session, session.begin():
+        futures = session.query(model.Future).\
+            where(
+                model.Future.onboard_date < datetime.utcnow(),
+                model.Future.delivery_date > datetime.utcnow()
+            ).\
+            all()
+
+        symbols = [future.symbol for future in futures]
+
+        return symbols
+
+def delete_future_last_date(engine, symbol, last_date):
+    with Session(engine) as session, session.begin():
+        session.execute(
+            delete(model.FutureHistorical).\
+            where(
+                model.FutureHistorical.symbol == symbol,
+                model.FutureHistorical.open_time == last_date
+            )
+        )
+
+
+
+def get_future_historical_price_last_date(engine, symbol):
+    last_date = None
+
+    with Session(engine) as session, session.begin():
+        result = session.query(func.max(model.FutureHistorical.open_time)).\
+            where(model.FutureHistorical.symbol == symbol).\
+            one()
+
+        last_date = result[0]
+
+    if not last_date:
+        with Session(engine) as session, session.begin():
+            result = session.query(model.Future.onboard_date). \
+                where(model.Future.symbol == symbol). \
+                all()
+
+            last_date = result[0][0] if result[0] else None
+
+    return last_date
 
 def sync_futures(engine, futures):
     with Session(engine) as session, session.begin():
@@ -59,3 +105,25 @@ def sync_futures_prices(engine, futures_prices):
             future_price_db.ask_qty = future_price['A']
             future_price_db.bid_price = future_price['b']
             future_price_db.bid_qty = future_price['B']
+
+def save_historical_data_futures(engine, symbol, historical_data):
+    with Session(engine) as session, session.begin():
+        for hour_data in historical_data:
+            market_data = model.FutureHistorical(symbol=symbol)
+            session.add(market_data)
+
+            market_data.open_time = datetime.fromtimestamp(hour_data[0] / 1000)
+            market_data.open = hour_data[1]
+            market_data.high = hour_data[2]
+            market_data.low = hour_data[3]
+            market_data.close = hour_data[4]
+            market_data.volume = hour_data[5]
+            market_data.close_time = datetime.fromtimestamp(hour_data[6] / 1000)
+            market_data.quote_asset_volume = hour_data[7]
+            market_data.trades = hour_data[8]
+            market_data.taker_buy_base = hour_data[9]
+            market_data.taker_buy_quote = hour_data[10]
+            market_data.ignore = hour_data[11]
+
+if __name__ == '__main__':
+    print(get_future_historical_price_last_date(model.get_engine(), 'ADAUSD_211231'))
