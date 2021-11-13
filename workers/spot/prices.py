@@ -1,16 +1,11 @@
-from binance import ThreadedWebsocketManager
-from binance.enums import FuturesType
-
-from binance_service import get_filtered_future_list
+from binance.streams import ThreadedWebsocketManager
 
 import traceback
+import time
+import app
+from model_service import sync_spot_prices, get_current_spot_symbols
 
 from keys import API_KEY, API_SECRET
-
-import time
-
-import app
-from model_service import sync_futures_prices
 
 import model
 
@@ -18,27 +13,25 @@ cache = dict()
 
 engine = model.get_engine()
 
-def task_future_price():
+def task_spot_price():
     engine.dispose()
-
-    # time.sleep(5)
 
     twm = ThreadedWebsocketManager(api_key=API_KEY, api_secret=API_SECRET)
     twm.start()
 
     def handle_socket_message(msg):
+        if not msg.get('data'):
+            print(msg)
+
         data = msg['data']
 
         symbol = data['s']
-        # print(symbol)
 
         cache[symbol] = data
 
-    #Tomar futuros desde la db
+    streams = [f"{symbol.lower()}@bookTicker" for symbol in get_current_spot_symbols(engine)]
 
-    streams = [f"{future['symbol'].lower()}@bookTicker" for future in get_filtered_future_list()]
-
-    twm.start_futures_multiplex_socket(callback=handle_socket_message, streams=streams, futures_type=FuturesType.COIN_M)
+    twm.start_multiplex_socket(callback=handle_socket_message, streams=streams)
 
     while app.running:
         try:
@@ -49,10 +42,10 @@ def task_future_price():
                 to_save.append(item_value)
 
             if len(to_save):
-                sync_futures_prices(engine, to_save)
+                sync_spot_prices(engine, to_save)
         except Exception as ex:
             print(ex)
             traceback.print_stack()
 
 if __name__ == '__main__':
-    task_future_price()
+    task_current_spot_price()

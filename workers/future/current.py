@@ -6,17 +6,20 @@ from model_service import sync_futures
 
 engine = model.get_engine()
 
-def task_current_futures():
+def update_future_current(engine_local):
+    futures = get_filtered_future_list()
+    sync_futures(engine_local, futures)
+
+def task_future_current():
     engine.dispose()
 
     while app.running:
         try:
-            futures = get_filtered_future_list()
-            sync_futures(engine, futures)
+            update_future_current(engine)
         except Exception as ex:
             print(ex)
 
         time.sleep(60)
 
 if __name__ == '__main__':
-    task_current_futures()
+    task_future_current()

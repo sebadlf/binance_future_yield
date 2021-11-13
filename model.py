@@ -11,6 +11,72 @@ import keys
 # declarative base class
 Base = declarative_base()
 
+class Spot(Base):
+    __tablename__ = 'spot'
+
+    symbol = Column(String(20), primary_key=True)
+
+    base_asset = Column(String(20))
+    quote_asset = Column(String(20))
+
+    min_price = Column(Float)
+    max_price = Column(Float)
+    tick_size = Column(Float)
+
+    # operations = relationship("Operation", back_populates="spot_relation")
+
+    spot_price = relationship("SpotPrice", uselist=False, back_populates="spot")
+
+    # spot_orders = relationship("SpotOrder", back_populates="spot")
+
+    # balance = relationship("SpotBalance", uselist=False, back_populates="spot")
+
+    inserted = Column(DATETIME(fsp=6), default=datetime.utcnow)
+    updated = Column(DATETIME(fsp=6), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index('base_asset', base_asset),
+    )
+
+class SpotPrice(Base):
+    __tablename__ = 'spot_price'
+
+    symbol = Column(String(20), ForeignKey('spot.symbol'), primary_key=True)
+    # price = Column(Float)
+
+    ask_price = Column(Float)
+    ask_qty = Column(Float)
+    bid_price = Column(Float)
+    bid_qty = Column(Float)
+
+    spot = relationship("Spot", back_populates="spot_price")
+
+    inserted = Column(DATETIME(fsp=6), default=datetime.utcnow)
+    updated = Column(DATETIME(fsp=6), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class SpotHistorical(Base):
+    __tablename__ = 'spot_historical'
+
+    symbol = Column(String(10), ForeignKey('spot.symbol'), primary_key=True)
+    open_time = Column(DATETIME, primary_key=True)
+    open = Column(Float)
+    high = Column(Float)
+    low = Column(Float)
+    close = Column(Float)
+    volume = Column(Float)
+    close_time = Column(DATETIME)
+    quote_asset_volume = Column(Float)
+    trades = Column(Integer)
+    taker_buy_base = Column(Float)
+    taker_buy_quote = Column(Float)
+    ignore = Column(Float)
+
+    inserted = Column(DATETIME(fsp=6), default=datetime.utcnow)
+    updated = Column(DATETIME(fsp=6), default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        Index('symbol', symbol, open_time),
+    )
 
 class Future(Base):
     __tablename__ = 'future'
@@ -104,6 +170,7 @@ class FutureHistorical(Base):
     __table_args__ = (
         Index('symbol', symbol, open_time),
     )
+
 
 engine = create_engine(keys.DB_CONNECTION)
 
