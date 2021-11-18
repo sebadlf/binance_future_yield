@@ -23,11 +23,13 @@ def task_spot_price():
         if not msg.get('data'):
             print(msg)
 
-        data = msg['data']
+        if msg.get('data'):
 
-        symbol = data['s']
+            data = msg['data']
 
-        cache[symbol] = data
+            symbol = data['s']
+
+            cache[symbol] = data
 
     streams = [f"{symbol.lower()}@bookTicker" for symbol in get_current_spot_symbols(engine)]
 

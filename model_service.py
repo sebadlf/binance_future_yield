@@ -219,5 +219,26 @@ def save_historical_data_futures(engine, symbol, historical_data):
             market_data.taker_buy_quote = hour_data[10]
             market_data.ignore = hour_data[11]
 
+def get_data_ratio(engine, ticker, quantity):
+    conn = engine
+
+    query = 'select avg(year_ratio) avg_year_ratio from ' \
+            '(select year_ratio from historical_ratios where ' \
+            f'future_symbol = "{ticker}" order by open_time desc limit 0, {quantity}) historical'
+
+    res = conn.execute(query).fetchone()[0]
+
+    return res
+
+def save_avg_ratio(engine, symbol, attribute, ratio):
+    with Session(engine) as session, session.begin():
+        current_signal = session.query(model.RatioIndicator).get(symbol)
+
+        if not current_signal:
+            current_signal = model.RatioIndicator(symbol=symbol)
+            session.add(current_signal)
+
+        setattr(current_signal, attribute, ratio)
+
 if __name__ == '__main__':
     print(get_future_historical_price_last_date(model.get_engine(), 'ADAUSD_211231'))

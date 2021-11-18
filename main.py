@@ -9,8 +9,11 @@ from workers.future.current import update_future_current, task_future_current
 from workers.future.historical import update_future_historical, task_future_historical
 from workers.future.prices import task_future_price
 
+from workers.indicators.calc_avg import task_avg_ratio
+
 import model
 import model_view
+import model_service
 
 if __name__ == '__main__':
     engine = model.get_engine()
@@ -47,6 +50,26 @@ if __name__ == '__main__':
 
     process_future_price = Process(name="process_future_price", target=task_future_price)
     process_future_price.start()
+
+    tickers = model_service.get_current_future_symbols(engine)
+
+    process_avg_ratio_monthly = Process(name="process_avg_ratio_monthly", target=task_avg_ratio, args=(tickers, 'monthly_avg_year_ratio', 43200))
+    process_avg_ratio_monthly.start()
+
+    process_avg_ratio_weekly = Process(name="process_avg_ratio_weekly", target=task_avg_ratio, args=(tickers, 'weekly_avg_year_ratio', 10080))
+    process_avg_ratio_weekly.start()
+
+    process_avg_ratio_daily = Process(name="process_avg_ratio_daily", target=task_avg_ratio, args=(tickers, 'daily_avg_year_ratio', 1440))
+    process_avg_ratio_daily.start()
+
+    process_avg_ratio_six_hours = Process(name="process_avg_ratio_six_hours", target=task_avg_ratio, args=(tickers, 'six_hours_avg_year_ratio', 360))
+    process_avg_ratio_six_hours.start()
+
+    process_avg_ratio_hourly = Process(name="process_avg_ratio_hourly", target=task_avg_ratio, args=(tickers, 'hourly_avg_year_ratio', 60))
+    process_avg_ratio_hourly.start()
+
+    process_avg_ratio_ten_minutes = Process(name="process_avg_ratio_ten_minutes", target=task_avg_ratio, args=(tickers, 'ten_minutes_avg_year_ratio', 10))
+    process_avg_ratio_ten_minutes.start()
 
 
 

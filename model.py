@@ -171,6 +171,20 @@ class FutureHistorical(Base):
         Index('symbol', symbol, open_time),
     )
 
+class RatioIndicator(Base):
+    __tablename__ = 'ratio_indicator'
+
+    symbol = Column(String(20), ForeignKey('future.symbol'), primary_key=True)
+    time = Column(DATETIME)
+
+    monthly_avg_year_ratio = Column(Float)
+    weekly_avg_year_ratio = Column(Float)
+    daily_avg_year_ratio = Column(Float)
+    six_hours_avg_year_ratio = Column(Float)
+    hourly_avg_year_ratio = Column(Float)
+    ten_minutes_avg_year_ratio = Column(Float)
+
+    signal = Column(String(20))
 
 engine = create_engine(keys.DB_CONNECTION)
 
